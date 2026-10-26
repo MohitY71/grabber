@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src https: http:;">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grabber</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand"><img src="icon.png" alt="" width="26" height="26"><span>Grabber</span></div>
+    <nav id="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="downloads" class="active" id="nav-dl"></button>
+      <button role="tab" data-tab="browser" id="nav-br"></button>
+      <button role="tab" data-tab="settings" id="nav-st"></button>
+    </nav>
+    <div class="top-right"><span id="total-speed" class="pill hidden"></span></div>
+  </header>
+
+  <main>
+    <!-- Downloads -->
+    <section id="tab-downloads" class="tab active" role="tabpanel">
+      <div class="scroll">
+        <div class="add-card">
+          <form id="add-form" class="add-row">
+            <span class="lead" id="add-lead"></span>
+            <input id="add-url" type="text" spellcheck="false" autocomplete="off" aria-label="Link to download"
+                   placeholder="Paste a YouTube, video, .m3u8 or file link">
+            <select id="add-quality" aria-label="Quality" title="Quality">
+              <option value="best">Best</option><option value="2160">4K</option><option value="1440">1440p</option>
+              <option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option>
+              <option value="360">360p</option><option value="audio">Audio (MP3)</option>
+            </select>
+            <button type="button" id="btn-paste" class="btn"></button>
+            <button type="submit" class="btn primary" id="btn-add"></button>
+          </form>
+          <div class="hint-row">
+            <p class="hint grow">Works with YouTube and most video sites, HLS (<code>.m3u8</code>) streams and direct files. DRM-protected streams can't be downloaded.</p>
+            <button type="button" class="btn ghost sm" id="btn-options" aria-expanded="false"></button>
+          </div>
+          <div id="add-options" class="options hidden">
+            <label class="field">Save as <input id="opt-name" type="text" placeholder="File name (optional)" autocomplete="off"></label>
+            <label class="field">Save to
+              <span class="row"><input id="opt-dir" type="text" placeholder="Default folder" readonly><button type="button" class="btn sm" id="opt-dir-pick">Choose…</button><button type="button" class="btn ghost sm icon-only" id="opt-dir-clear" title="Use default folder"></button></span>
+            </label>
+            <label class="field">Priority
+              <select id="opt-prio"><option value="0">Normal</option><option value="1">High — start first</option><option value="-1">Low — start last</option></select>
+            </label>
+            <label class="field">Start
+              <span class="row"><select id="opt-when"><option value="now">Now</option><option value="at">At a set time…</option></select><input id="opt-at" type="datetime-local" class="hidden"></span>
+            </label>
+            <label class="field wide">Verify checksum <span class="muted small">(optional — MD5, SHA-1, SHA-256 or SHA-512)</span>
+              <input id="opt-sum" type="text" placeholder="e.g. sha256:9f86d081884c7d65…" spellcheck="false" autocomplete="off">
+            </label>
+          </div>
+        </div>
+
+        <div id="clip-banner" class="banner hidden">
+          <span id="clip-ico"></span><span class="grow ellipsis" id="clip-text"></span>
+          <button class="btn primary sm" id="clip-go">Download</button>
+          <button class="btn ghost sm icon-only" id="clip-x" aria-label="Dismiss"></button>
+        </div>
+
+        <div class="searchbar">
+          <span class="lead" id="search-ico"></span>
+          <input id="search" type="search" placeholder="Search downloads by name or link" autocomplete="off" aria-label="Search downloads">
+          <select id="f-cat" aria-label="Type">
+            <option value="">All types</option><option value="video">Video</option><option value="music">Music</option><option value="documents">Documents</option>
+            <option value="images">Images</option><option value="archives">Archives</option><option value="programs">Programs</option><option value="other">Other</option>
+          </select>
+          <select id="f-date" aria-label="Date"><option value="">Any time</option><option value="1">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select>
+        </div>
+        <div class="list-head">
+          <div id="chips" role="group" aria-label="Filter"></div>
+          <div class="grow"></div>
+          <button class="btn ghost sm" id="btn-pause-all"></button>
+          <button class="btn ghost sm" id="btn-resume-all"></button>
+          <button class="btn ghost sm" id="btn-clear-done"></button>
+        </div>
+
+        <ul id="list" aria-live="polite"></ul>
+
+        <div id="empty" class="empty hidden">
+          <div class="empty-art" id="empty-art"></div>
+          <h2>Nothing downloading yet</h2>
+          <p class="muted">Paste a link above and it starts right away. Or open the browser, visit any page and press play — videos found on the page appear with a Download button.</p>
+          <div class="empty-actions"><button class="btn primary" id="empty-browser"></button><button class="btn" id="empty-paste"></button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Browser -->
+    <section id="tab-browser" class="tab" role="tabpanel">
+      <div id="btabs"><div id="btab-list"></div><button id="btab-new" class="btn ghost icon-only" title="New tab" aria-label="New tab"></button></div>
+      <form id="nav-form">
+        <button type="button" id="nav-back" class="btn ghost icon-only" title="Back" aria-label="Back" disabled></button>
+        <button type="button" id="nav-fwd" class="btn ghost icon-only" title="Forward" aria-label="Forward" disabled></button>
+        <button type="button" id="nav-reload" class="btn ghost icon-only" title="Reload" aria-label="Reload"></button>
+        <input id="nav-url" type="text" spellcheck="false" autocomplete="off" aria-label="Address" placeholder="Search or enter address">
+        <button type="button" id="shield" class="btn ghost" title="Ad blocker"></button>
+        <button type="button" id="media-toggle" class="btn primary"></button>
+      </form>
+      <div id="loadbar"><i></i></div>
+      <div id="browser-wrap">
+        <div id="wv-stack"></div>
+        <div id="start-page" class="overlay hidden">
+          <div class="empty-art" id="start-art"></div>
+          <h2>Find a video to grab</h2>
+          <p class="muted">Open a page and press play. Videos are detected automatically and listed on the right.</p>
+          <div id="quick"></div>
+        </div>
+        <div id="err-page" class="overlay hidden"><h2>Can't open this page</h2><p id="err-text" class="muted"></p><button id="err-retry" class="btn primary">Try again</button></div>
+        <aside id="media-panel" class="hidden">
+          <div class="panel-head"><h3>On this page</h3><button class="btn ghost sm" id="media-rescan">Rescan</button></div>
+          <div id="page-extract"></div>
+          <h4 class="sub">Detected streams</h4>
+          <ul id="media-list"></ul>
+          <p id="media-empty" class="muted small">Nothing detected yet. Press play on the video — streams are picked up as the page loads them.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="tab-settings" class="tab" role="tabpanel">
+      <div class="scroll"><div class="settings">
+        <div class="card">
+          <h3>Downloads</h3>
+          <label class="field">Save to
+            <span class="row"><input id="set-dir" type="text" readonly><button class="btn" id="set-dir-pick">Change…</button></span>
+          </label>
+          <label class="field">Default quality
+            <select id="set-quality">
+              <option value="best">Best available</option><option value="2160">Up to 4K</option><option value="1440">Up to 1440p</option>
+              <option value="1080">Up to 1080p</option><option value="720">Up to 720p</option><option value="480">Up to 480p</option>
+              <option value="360">Up to 360p</option><option value="audio">Audio only (MP3)</option><option value="worst">Smallest file</option>
+            </select>
+          </label>
+          <label class="field">When a file with the same name exists
+            <select id="set-exists"><option value="ask">Ask me</option><option value="rename">Keep both (add a number)</option><option value="replace">Replace the old file</option></select>
+          </label>
+          <label class="check"><input type="checkbox" id="set-cats"><span>Sort files into folders by type <span class="muted small">(Video, Music, Documents, Images, Archives, Programs)</span></span></label>
+          <label class="field"><span class="field-h">Connections per download <output id="out-threads"></output></span><input id="set-threads" type="range" min="1" max="16"></label>
+          <label class="field"><span class="field-h">Downloads at the same time <output id="out-conc"></output></span><input id="set-conc" type="range" min="1" max="8"></label>
+          <label class="field"><span class="field-h">Speed limit <output id="out-speed"></output></span><input id="set-speed" type="range" min="0" max="40" step="1"></label>
+          <label class="field"><span class="field-h">Automatic retries after a network problem <output id="out-retry"></output></span><input id="set-retry" type="range" min="0" max="10"></label>
+        </div>
+
+        <div class="card">
+          <h3>Background &amp; notifications</h3>
+          <label class="check"><input type="checkbox" id="set-notify"><span>Notify me when a download finishes or fails</span></label>
+          <label class="check"><input type="checkbox" id="set-bg"><span>Keep downloading in the tray / menu bar when the window is closed</span></label>
+          <label class="check"><input type="checkbox" id="set-awake"><span>Prevent the computer from sleeping while downloading</span></label>
+          <label class="check"><input type="checkbox" id="set-resume"><span>Continue interrupted downloads when the app starts</span></label>
+        </div>
+
+        <div class="card">
+          <h3>Ad blocker</h3>
+          <label class="check"><input type="checkbox" id="set-adblock"><span>Block ads and trackers in the built-in browser</span></label>
+          <div class="row between"><span id="adblock-status" class="muted small">Checking…</span><button class="btn" id="adblock-update"></button></div>
+          <p class="muted small">Uses the public EasyList, EasyPrivacy and uBlock Origin lists. Turn it off for a single site with the shield button in the browser bar.</p>
+          <div id="adblock-sites" class="muted small"></div>
+        </div>
+
+        <div class="card">
+          <h3>Browser extension</h3>
+          <p class="muted small">Send downloads from Chrome, Edge, Brave or Firefox straight to Grabber: links, videos on any page, and files your browser would otherwise download itself.</p>
+          <div class="row between"><span id="api-status" class="muted small"></span><button class="btn" id="ext-open"></button></div>
+          <label class="field">Pairing code <span class="muted small">(paste it into the extension's options once)</span>
+            <span class="row"><input id="api-token" type="text" readonly><button class="btn" id="api-copy"></button></span>
+          </label>
+        </div>
+
+        <div class="card">
+          <h3>Video site engine</h3>
+          <p class="muted small">YouTube, Vimeo and similar sites don't expose a single file; this open-source engine (yt-dlp) finds the video for you. It is downloaded once on first use and can be updated when a site changes.</p>
+          <div class="row between"><span id="engine-status" class="muted">Checking…</span><button class="btn" id="engine-update"></button></div>
+        </div>
+
+        <div class="card about">
+          <div class="about-head"><img src="icon.png" alt="" width="56" height="56"><div><h3 id="about-name">Grabber</h3><div class="muted small" id="about-ver"></div></div></div>
+          <p class="muted small">Only download content you have the right to save. Protected (DRM) streams are not supported.</p>
+          <div class="dev">
+            <div><div class="muted small">Developer</div><div class="dev-name">Mohit Yadav</div></div>
+            <div class="row">
+              <button class="btn" id="dev-mail"></button>
+              <button class="btn ghost icon-only" id="dev-copy" title="Copy email address" aria-label="Copy email address"></button>
+            </div>
+          </div>
+          <div class="muted small" id="dev-email">mohit@heygeeks.in</div>
+        </div>
+      </div></div>
+    </section>
+  </main>
+
+  <footer id="statusbar"><span id="st-left">Ready</span><span class="grow"></span><span id="st-right" class="muted"></span></footer>
+</div>
+<div id="modal" class="hidden" role="dialog" aria-modal="true"><div class="modal-card"><h3 id="modal-title"></h3><p class="muted small" id="modal-text"></p><input id="modal-input" type="text" autocomplete="off" spellcheck="false"><div class="modal-actions"><button class="btn" id="modal-cancel">Cancel</button><button class="btn primary" id="modal-ok">OK</button></div></div></div>
+<div id="drop" class="hidden"><div>Drop a link to download</div></div>
+<div id="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>

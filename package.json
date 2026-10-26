@@ -1,0 +1,24 @@
+{
+  "name": "grabber",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "npm test -w @grabber/core",
+    "desktop": "npm start -w @grabber/desktop",
+    "build": "node init && npm run build -w @grabber/desktop",
+    "dist": "npm run dist -w @grabber/desktop",
+    "icons": "npm run icons -w @grabber/desktop",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "dotenv": "^8.2.0",
+    "esbuild": "^0.28.2",
+    "node-fetch": "^3.3.2",
+    "typescript": "^5.9.3"
+  }
+}
